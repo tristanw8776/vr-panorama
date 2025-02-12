@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>360° Panorama VR Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+    <style>
+      .vr-instructions {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        text-align: center;
+        z-index: 999;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="vr-instructions">
+      Click the VR headset icon in the bottom right to enter VR mode
+    </div>
+    <a-scene>
+      <a-sky src="your-panorama.jpg" rotation="0 -90 0"></a-sky>
+      <a-entity position="0 1.6 0">
+        <a-camera look-controls wasd-controls></a-camera>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
