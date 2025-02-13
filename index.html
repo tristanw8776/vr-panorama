@@ -1,100 +1,91 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>360° Panorama iOS Viewer</title>
+    <title>360° Panorama VR Viewer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <style>
-      .vr-button {
+      #startButton {
         position: fixed;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(0,0,0,0.7);
+        background: #4CAF50;
         color: white;
         padding: 15px 30px;
         border-radius: 5px;
-        text-align: center;
-        z-index: 999;
         border: none;
         font-size: 16px;
+        z-index: 999;
         cursor: pointer;
-      }
-      .instructions {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 20px;
-        border-radius: 10px;
-        text-align: center;
-        z-index: 1000;
-        max-width: 80%;
-        display: none;
-      }
-      .instructions.visible {
-        display: block;
       }
     </style>
   </head>
   <body>
-    <button class="vr-button" id="startButton">Start VR Mode</button>
-    <div class="instructions" id="instructions">
-      Place your phone in your VR headset horizontally.<br><br>
-      Tap anywhere to begin.
-    </div>
-    <a-scene vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
+    <button id="startButton">Start VR Mode</button>
+    
+    <a-scene>
       <a-assets>
         <img id="panorama" src="Panorama_Tharpe%20Street%20Site%20Layout_v2%2020220902_r20_2025-02-12-15-29-31.jpg">
       </a-assets>
-      <a-sky src="#panorama" rotation="0 -90 0"></a-sky>
-      <a-entity position="0 1.6 0">
-        <a-camera look-controls="magicWindowTrackingEnabled: true; touchEnabled: true; mouseEnabled: true" wasd-controls="enabled: false">
-        </a-camera>
-      </a-entity>
+      
+      <!-- Left eye -->
+      <a-camera id="left-eye" position="0 1.6 0" stereoscopic="eye:left">
+        <a-sky src="#panorama" rotation="0 -90 0"></a-sky>
+      </a-camera>
+      
+      <!-- Right eye -->
+      <a-camera id="right-eye" position="0 1.6 0" stereoscopic="eye:right">
+        <a-sky src="#panorama" rotation="0 -90 0"></a-sky>
+      </a-camera>
     </a-scene>
 
     <script>
       document.getElementById('startButton').addEventListener('click', function() {
-        // Request device orientation permissions
+        // Request device orientation permissions for iOS
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           DeviceOrientationEvent.requestPermission()
             .then(response => {
               if (response === 'granted') {
-                startVR();
+                enableVRMode();
               }
             })
             .catch(console.error);
         } else {
-          startVR();
+          enableVRMode();
         }
       });
 
-      function startVR() {
-        // Hide the start button
+      function enableVRMode() {
+        // Hide the button
         document.getElementById('startButton').style.display = 'none';
-        // Show instructions
-        document.getElementById('instructions').classList.add('visible');
         
-        // Set up tap to dismiss instructions
-        document.addEventListener('touchstart', function dismissInstructions() {
-          document.getElementById('instructions').classList.remove('visible');
-          document.removeEventListener('touchstart', dismissInstructions);
-          // Force landscape
-          screen.orientation.lock('landscape').catch(() => {
-            // Orientation locking not supported
+        // Force landscape orientation
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(function(error) {
+            console.log(error);
           });
-        });
-
-        // Enable stereoscopic mode
+        }
+        
+        // Enable stereo rendering
         const scene = document.querySelector('a-scene');
-        scene.addEventListener('loaded', function () {
-          const camera = document.querySelector('a-camera');
-          if (camera) {
-            camera.setAttribute('stereoscopic', 'eye:left');
-          }
+        scene.setAttribute('vr-mode', 'enabled: true');
+        
+        // Apply stereoscopic mode
+        const leftCamera = document.querySelector('#left-eye');
+        const rightCamera = document.querySelector('#right-eye');
+        
+        leftCamera.setAttribute('stereoscopic', 'eye:left');
+        rightCamera.setAttribute('stereoscopic', 'eye:right');
+        
+        // Enable device orientation controls
+        leftCamera.setAttribute('look-controls', {
+          touchEnabled: true,
+          magicWindowTrackingEnabled: true
+        });
+        rightCamera.setAttribute('look-controls', {
+          touchEnabled: true,
+          magicWindowTrackingEnabled: true
         });
       }
     </script>
