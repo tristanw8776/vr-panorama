@@ -2,9 +2,10 @@
 <html>
   <head>
     <title>360° Panorama VR Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <style>
-      .viewer-controls {
+      .vr-instructions {
         position: fixed;
         bottom: 20px;
         left: 50%;
@@ -15,62 +16,21 @@
         border-radius: 5px;
         text-align: center;
         z-index: 999;
-        display: flex;
-        gap: 10px;
-      }
-      .control-button {
-        background: #4CAF50;
-        border: none;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-      }
-      .control-button:hover {
-        background: #45a049;
-      }
-      #unsupported-message {
-        display: none;
-        color: #ff4444;
-        margin-top: 10px;
       }
     </style>
   </head>
   <body>
-    <div class="viewer-controls">
-      <button class="control-button" onclick="toggleFullscreen()">Fullscreen</button>
-      <button class="control-button" onclick="enterVR()">Enter VR</button>
-      <div id="unsupported-message"></div>
+    <div class="vr-instructions">
+      Click the VR headset icon in the bottom right to enter VR mode
     </div>
-
-    <a-scene>
-      <a-sky src="Panorama_Tharpe%20Street%20Site%20Layout_v2%2020220902_r20_2025-02-12-15-29-31.jpg" rotation="0 -90 0"></a-sky>
+    <a-scene vr-mode-ui="enabled: true" loading-screen="enabled: true">
+      <a-assets>
+        <img id="panorama" src="Panorama_Tharpe%20Street%20Site%20Layout_v2%2020220902_r20_2025-02-12-15-29-31.jpg" crossorigin="anonymous">
+      </a-assets>
+      <a-sky src="#panorama" rotation="0 -90 0"></a-sky>
       <a-entity position="0 1.6 0">
-        <a-camera look-controls wasd-controls></a-camera>
+        <a-camera look-controls="magicWindowTrackingEnabled: true" wasd-controls></a-camera>
       </a-entity>
     </a-scene>
-
-    <script>
-      function toggleFullscreen() {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen();
-        } else {
-          document.exitFullscreen();
-        }
-      }
-
-      function enterVR() {
-        var scene = document.querySelector('a-scene');
-        if (scene.hasAttribute('vr-mode-ui')) {
-          // Check if WebXR is available
-          if (navigator.xr) {
-            scene.enterVR();
-          } else {
-            document.getElementById('unsupported-message').style.display = 'block';
-            document.getElementById('unsupported-message').textContent = 'VR not supported on this device';
-          }
-        }
-      }
-
-      
+  </body>
+</html
