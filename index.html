@@ -1,36 +1,102 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>360° Panorama VR Viewer</title>
+    <title>360° Panorama iOS Viewer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
     <style>
-      .vr-instructions {
+      .vr-button {
         position: fixed;
         bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
         background: rgba(0,0,0,0.7);
         color: white;
-        padding: 15px;
+        padding: 15px 30px;
         border-radius: 5px;
         text-align: center;
         z-index: 999;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .instructions {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        z-index: 1000;
+        max-width: 80%;
+        display: none;
+      }
+      .instructions.visible {
+        display: block;
       }
     </style>
   </head>
   <body>
-    <div class="vr-instructions">
-      Click the VR headset icon in the bottom right to enter VR mode
+    <button class="vr-button" id="startButton">Start VR Mode</button>
+    <div class="instructions" id="instructions">
+      Place your phone in your VR headset horizontally.<br><br>
+      Tap anywhere to begin.
     </div>
-    <a-scene vr-mode-ui="enabled: true" loading-screen="enabled: true">
+    <a-scene vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: true">
       <a-assets>
-        <img id="panorama" src="Panorama_Tharpe%20Street%20Site%20Layout_v2%2020220902_r20_2025-02-12-15-29-31.jpg" crossorigin="anonymous">
+        <img id="panorama" src="Panorama_Tharpe%20Street%20Site%20Layout_v2%2020220902_r20_2025-02-12-15-29-31.jpg">
       </a-assets>
       <a-sky src="#panorama" rotation="0 -90 0"></a-sky>
       <a-entity position="0 1.6 0">
-        <a-camera look-controls="magicWindowTrackingEnabled: true" wasd-controls></a-camera>
+        <a-camera look-controls="magicWindowTrackingEnabled: true; touchEnabled: true; mouseEnabled: true" wasd-controls="enabled: false">
+        </a-camera>
       </a-entity>
     </a-scene>
+
+    <script>
+      document.getElementById('startButton').addEventListener('click', function() {
+        // Request device orientation permissions
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          DeviceOrientationEvent.requestPermission()
+            .then(response => {
+              if (response === 'granted') {
+                startVR();
+              }
+            })
+            .catch(console.error);
+        } else {
+          startVR();
+        }
+      });
+
+      function startVR() {
+        // Hide the start button
+        document.getElementById('startButton').style.display = 'none';
+        // Show instructions
+        document.getElementById('instructions').classList.add('visible');
+        
+        // Set up tap to dismiss instructions
+        document.addEventListener('touchstart', function dismissInstructions() {
+          document.getElementById('instructions').classList.remove('visible');
+          document.removeEventListener('touchstart', dismissInstructions);
+          // Force landscape
+          screen.orientation.lock('landscape').catch(() => {
+            // Orientation locking not supported
+          });
+        });
+
+        // Enable stereoscopic mode
+        const scene = document.querySelector('a-scene');
+        scene.addEventListener('loaded', function () {
+          const camera = document.querySelector('a-camera');
+          if (camera) {
+            camera.setAttribute('stereoscopic', 'eye:left');
+          }
+        });
+      }
+    </script>
   </body>
-</html
+</html>
