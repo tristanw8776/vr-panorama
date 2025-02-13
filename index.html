@@ -1,93 +1,137 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>360° Panorama VR Viewer</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/aframe/1.4.2/aframe.min.js"></script>
+<head>
+    <title>VR Panorama Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-      #startButton {
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #4CAF50;
-        color: white;
-        padding: 15px 30px;
-        border-radius: 5px;
-        border: none;
-        font-size: 16px;
-        z-index: 999;
-        cursor: pointer;
-      }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        #container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: row;
+        }
+        
+        .eye-view {
+            width: 50%;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .panorama {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200%;
+            height: 200%;
+            object-fit: cover;
+        }
+        
+        #startButton {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        #instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 999;
+            display: none;
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <button id="startButton">Start VR Mode</button>
-    
-    <a-scene>
-      <a-assets>
-        <img id="panorama" src="Panorama_Tharpe%20Street%20Site%20Layout_v2%2020220902_r20_2025-02-12-15-29-31.jpg">
-      </a-assets>
-      
-      <!-- Left eye -->
-      <a-camera id="left-eye" position="0 1.6 0" stereoscopic="eye:left">
-        <a-sky src="#panorama" rotation="0 -90 0"></a-sky>
-      </a-camera>
-      
-      <!-- Right eye -->
-      <a-camera id="right-eye" position="0 1.6 0" stereoscopic="eye:right">
-        <a-sky src="#panorama" rotation="0 -90 0"></a-sky>
-      </a-camera>
-    </a-scene>
+    <div id="instructions">
+        Place your phone in your VR headset<br>
+        Tap anywhere to begin
+    </div>
+    <div id="container" style="display: none;">
+        <div class="eye-view">
+            <img class="panorama" src="Panorama_Tharpe%20Street%20Site%20Layout_v2%2020220902_r20_2025-02-12-15-29-31.jpg" alt="Panorama">
+        </div>
+        <div class="eye-view">
+            <img class="panorama" src="Panorama_Tharpe%20Street%20Site%20Layout_v2%2020220902_r20_2025-02-12-15-29-31.jpg" alt="Panorama">
+        </div>
+    </div>
 
     <script>
-      document.getElementById('startButton').addEventListener('click', function() {
-        // Request device orientation permissions for iOS
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          DeviceOrientationEvent.requestPermission()
-            .then(response => {
-              if (response === 'granted') {
-                enableVRMode();
-              }
-            })
-            .catch(console.error);
-        } else {
-          enableVRMode();
-        }
-      });
+        const startButton = document.getElementById('startButton');
+        const container = document.getElementById('container');
+        const instructions = document.getElementById('instructions');
 
-      function enableVRMode() {
-        // Hide the button
-        document.getElementById('startButton').style.display = 'none';
-        
-        // Force landscape orientation
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock('landscape').catch(function(error) {
-            console.log(error);
-          });
+        startButton.addEventListener('click', async function() {
+            // Request device orientation permissions on iOS
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        startVR();
+                    }
+                } catch (error) {
+                    console.error('Error requesting device orientation permission:', error);
+                }
+            } else {
+                startVR();
+            }
+        });
+
+        function startVR() {
+            // Hide button and show split screen
+            startButton.style.display = 'none';
+            container.style.display = 'flex';
+            instructions.style.display = 'block';
+
+            // Force landscape orientation if supported
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(console.error);
+            }
+
+            // Hide instructions on tap
+            document.addEventListener('touchstart', function hideInstructions() {
+                instructions.style.display = 'none';
+                document.removeEventListener('touchstart', hideInstructions);
+            });
+
+            // Initialize device orientation handling
+            window.addEventListener('deviceorientation', handleOrientation);
         }
-        
-        // Enable stereo rendering
-        const scene = document.querySelector('a-scene');
-        scene.setAttribute('vr-mode', 'enabled: true');
-        
-        // Apply stereoscopic mode
-        const leftCamera = document.querySelector('#left-eye');
-        const rightCamera = document.querySelector('#right-eye');
-        
-        leftCamera.setAttribute('stereoscopic', 'eye:left');
-        rightCamera.setAttribute('stereoscopic', 'eye:right');
-        
-        // Enable device orientation controls
-        leftCamera.setAttribute('look-controls', {
-          touchEnabled: true,
-          magicWindowTrackingEnabled: true
-        });
-        rightCamera.setAttribute('look-controls', {
-          touchEnabled: true,
-          magicWindowTrackingEnabled: true
-        });
-      }
+
+        function handleOrientation(event) {
+            const panoramas = document.querySelectorAll('.panorama');
+            const beta = event.beta;  // X-axis rotation
+            const gamma = event.gamma; // Y-axis rotation
+            const alpha = event.alpha; // Z-axis rotation
+
+            panoramas.forEach(panorama => {
+                panorama.style.transform = `translate(-50%, -50%) rotateX(${-beta}deg) rotateY(${-gamma}deg) rotateZ(${-alpha}deg)`;
+            });
+        }
     </script>
-  </body>
+</body>
 </html>
