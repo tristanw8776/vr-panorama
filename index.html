@@ -17,6 +17,7 @@
             height: 100%;
             display: flex;
             flex-direction: row;
+            position: fixed;
         }
         
         .eye-view {
@@ -28,12 +29,12 @@
         
         .panorama {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 200%;
-            height: 200%;
+            height: 100%;
+            transform-origin: center center;
+            width: 100%;
             object-fit: cover;
+            left: 0;
+            top: 0;
         }
         
         #startButton {
@@ -84,9 +85,9 @@
         const startButton = document.getElementById('startButton');
         const container = document.getElementById('container');
         const instructions = document.getElementById('instructions');
+        let initialAlpha = null;
 
         startButton.addEventListener('click', async function() {
-            // Request device orientation permissions on iOS
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     const permission = await DeviceOrientationEvent.requestPermission();
@@ -102,34 +103,33 @@
         });
 
         function startVR() {
-            // Hide button and show split screen
             startButton.style.display = 'none';
             container.style.display = 'flex';
             instructions.style.display = 'block';
 
-            // Force landscape orientation if supported
             if (screen.orientation && screen.orientation.lock) {
                 screen.orientation.lock('landscape').catch(console.error);
             }
 
-            // Hide instructions on tap
             document.addEventListener('touchstart', function hideInstructions() {
                 instructions.style.display = 'none';
                 document.removeEventListener('touchstart', hideInstructions);
             });
 
-            // Initialize device orientation handling
             window.addEventListener('deviceorientation', handleOrientation);
         }
 
         function handleOrientation(event) {
-            const panoramas = document.querySelectorAll('.panorama');
-            const beta = event.beta;  // X-axis rotation
-            const gamma = event.gamma; // Y-axis rotation
-            const alpha = event.alpha; // Z-axis rotation
+            if (initialAlpha === null) {
+                initialAlpha = event.alpha;
+            }
 
+            const panoramas = document.querySelectorAll('.panorama');
+            const relativeAlpha = event.alpha - initialAlpha;
+            
             panoramas.forEach(panorama => {
-                panorama.style.transform = `translate(-50%, -50%) rotateX(${-beta}deg) rotateY(${-gamma}deg) rotateZ(${-alpha}deg)`;
+                // Only rotate the image horizontally based on alpha (compass direction)
+                panorama.style.transform = `translateX(-${relativeAlpha}px)`;
             });
         }
     </script>
